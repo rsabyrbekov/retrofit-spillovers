@@ -10,11 +10,11 @@
 
 Household *i* chooses retrofit spending *y<sub>i</sub>* to maximize
 
-$$U_i = a_i y_i - \tfrac12 y_i^2 + \rho\, y_i \sum_j w_{ij} y_j, \qquad a_i = x_i'\beta + \varepsilon_i$$
+$$U_i = a_i y_i - \tfrac12 y_i^2 + \rho y_i \sum_j w_{ij} y_j, \qquad a_i = x_i'\beta + \varepsilon_i$$
 
 The first-order condition gives a linear best response, *y<sub>i</sub> = a<sub>i</sub> + ρ Σ<sub>j</sub> w<sub>ij</sub> y<sub>j</sub>*. Stacking households, the unique Nash equilibrium for |ρ| < 1 is the SAR model (Ballester, Calvó-Armengol & Zenou, 2006):
 
-$$y = \rho W y + X\beta + \varepsilon \;\Rightarrow\; y = (I-\rho W)^{-1}(X\beta + \varepsilon)$$
+$$y = \rho W y + X\beta + \varepsilon \quad\Rightarrow\quad y = (I-\rho W)^{-1}(X\beta + \varepsilon)$$
 
 A policy that shifts one household's private return propagates through rounds of best responses. The marginal effect matrix is $\partial y/\partial x_k' = \beta_k (I-\rho W)^{-1}$, which splits into **direct**, **indirect (spillover)** and **total** effects (LeSage & Pace, 2009). With row-standardized *W*, total = β<sub>k</sub>/(1 − ρ).
 
