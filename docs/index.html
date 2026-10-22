@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Neighborhood Retrofit Spillovers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lab-notebook page — model statement, then a two-pane bench (map + controls | estimates), then policy readout */
+:root{
+  --bg:#F2F5F5; --surface:#FFFFFF; --surface-2:#E6ECEC; --ink:#132224; --muted:#56696C; --line:#D2DCDC;
+  --accent:#0F6E6A; --accent-ink:#FFFFFF; --amber:#B9770E; --neg:#3D6CAD; --pos:#B2443C;
+  --ramp-0:#EAF2EE; --ramp-1:#5EA596; --ramp-2:#0D3B46;
+  --f-display:"Spectral", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1617; --surface:#132022; --surface-2:#1B2B2D; --ink:#E2EBEA; --muted:#93A6A7; --line:#2A3B3D;
+  --accent:#4FC0B3; --accent-ink:#06201E; --amber:#E2B04A; --neg:#729EDC; --pos:#E27B70;
+  --ramp-0:#1A2B2D; --ramp-1:#2E7E77; --ramp-2:#BDF1DA; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0D1617; --surface:#132022; --surface-2:#1B2B2D; --ink:#E2EBEA; --muted:#93A6A7; --line:#2A3B3D;
+  --accent:#4FC0B3; --accent-ink:#06201E; --amber:#E2B04A; --neg:#729EDC; --pos:#E27B70;
+  --ramp-0:#1A2B2D; --ramp-1:#2E7E77; --ramp-2:#BDF1DA; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 56px;display:grid;gap:28px}
+header{display:grid;gap:10px;max-width:780px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(32px,5vw,50px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0;text-wrap:balance}
+h3{font-size:12px;font-family:var(--f-mono);font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0}
+p{margin:0;max-width:68ch}
+.lead{font-size:17px;color:var(--muted)}
+.byline{font-size:13px;color:var(--muted)}
+.byline a{color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:14px;min-width:0}
+.model{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.step{display:grid;gap:8px;align-content:start;min-width:0}
+.step .k{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.eq{font-family:var(--f-display);font-style:italic;font-size:18px;background:var(--surface-2);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.eq b{font-style:normal;font-weight:600}
+.small{font-size:13px;color:var(--muted)}
+.bench{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px;align-items:start}
+@media (max-width:900px){.bench{grid-template-columns:1fr}}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+@media (max-width:460px){.controls{grid-template-columns:1fr}}
+.ctl{display:grid;gap:4px}
+.ctl label{font-size:13px;font-weight:500;display:flex;justify-content:space-between;gap:8px}
+.ctl label output{font-family:var(--f-mono);color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;width:max-content;max-width:100%}
+.seg button{font:inherit;font-size:12.5px;border:0;background:transparent;color:var(--ink);padding:6px 9px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.btn{font:inherit;font-size:13px;font-weight:500;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:7px;padding:6px 12px;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.maphead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+#map{width:100%;aspect-ratio:1/1;max-width:100%;display:block;border-radius:6px;cursor:crosshair;touch-action:manipulation}
+.legend{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+#legendBar{height:8px;border-radius:4px}
+.readout{font-size:13px;background:var(--surface-2);border-radius:6px;padding:10px 12px;min-height:58px;font-variant-numeric:tabular-nums}
+.readout strong{font-family:var(--f-mono);font-weight:500}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.results{display:grid;gap:20px;min-width:0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td .se{color:var(--muted);font-size:12px;margin-left:4px}
+td.true{color:var(--amber);font-family:var(--f-mono)}
+tr.hl td{background:var(--surface-2)}
+.miss{color:var(--pos)}
+.twin{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+svg text{fill:var(--muted);font-family:var(--f-mono);font-size:10px}
+svg .axis{stroke:var(--line)}
+svg .curve{stroke:var(--accent);fill:none;stroke-width:2}
+svg .area{fill:var(--accent);opacity:.08}
+svg .truth{stroke:var(--amber);stroke-dasharray:4 3;stroke-width:1.5}
+svg .ci{stroke:var(--muted);stroke-dasharray:2 3}
+svg .pt{fill:var(--accent);opacity:.45}
+svg .fit{stroke:var(--pos);stroke-width:2}
+.stat{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.stat span{font-family:var(--f-mono)}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--ink)}
+.pill.sig{background:var(--accent);color:var(--accent-ink)}
+.policy{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.fig{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:2px}
+.fig .v{font-family:var(--f-display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.fig .l{font-size:12px;color:var(--muted)}
+.fig.em{border-color:var(--accent)}
+.fig.em .v{color:var(--accent)}
+.note{font-size:14px;max-width:72ch}
+footer{font-size:13px;color:var(--muted);display:grid;gap:6px;border-top:1px solid var(--line);padding-top:18px}
+footer a{color:var(--accent)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Household microeconomics · Spatial econometrics</div>
+    <h1>Neighborhood Retrofit Spillovers</h1>
+    <p class="lead">When one household insulates its walls or installs a heat pump, the neighbors notice. This lab simulates 400 households on a street grid, gives a quarter of them a retrofit voucher, and asks what a standard regression misses when spending decisions spill across the fence.</p>
+    <p class="byline">Rahat Sabyrbekov, PhD · environmental &amp; applied microeconomics · <a href="https://github.com/rsabyrbekov" target="_blank" rel="noopener">github.com/rsabyrbekov</a></p>
+  </header>
+
+  <section class="panel" aria-labelledby="mtitle">
+    <h2 id="mtitle">From household choice to a spatial autoregressive model</h2>
+    <div class="model">
+      <div class="step">
+        <div class="k">Preferences</div>
+        <p>Household <i>i</i> picks retrofit spending <i>y<sub>i</sub></i>. Its private return depends on income, tenure, building age and the voucher. A complementarity term rewards matching what neighbors spend (shared contractors, information, social norms).</p>
+        <div class="eq">U<sub>i</sub> = a<sub>i</sub>y<sub>i</sub> − ½y<sub>i</sub><sup>2</sup> + ρ y<sub>i</sub> Σ<sub>j</sub> w<sub>ij</sub>y<sub>j</sub></div>
+      </div>
+      <div class="step">
+        <div class="k">Best response and equilibrium</div>
+        <p>The first-order condition gives a linear best response. Stacking all households, the unique Nash equilibrium (for |ρ| &lt; 1) is the SAR model.</p>
+        <div class="eq">y = ρWy + Xβ + ε  ⇒  y = (I − ρW)<sup>−1</sup>(Xβ + ε)</div>
+      </div>
+      <div class="step">
+        <div class="k">What a policy does</div>
+        <p>A voucher shifts one household's <i>a<sub>i</sub></i>, then ripples outward through rounds of best responses. Averaging the impact matrix gives direct, indirect and total effects (LeSage &amp; Pace).</p>
+        <div class="eq">∂y/∂x<sub>k</sub>′ = β<sub>k</sub>(I − ρW)<sup>−1</sup>,  total = β<sub>k</sub>/(1 − ρ)</div>
+      </div>
+    </div>
+    <p class="small">W is rook contiguity on a 20 × 20 torus, row-standardized. Its eigenvalues have a closed form, so exact maximum likelihood, analytic standard errors and the impact decomposition all run in your browser. Data are simulated; amber numbers are the true values the estimator is trying to recover.</p>
+  </section>
+
+  <section class="bench">
+    <div class="panel">
+      <div class="controls">
+        <div class="ctl">
+          <label for="rho">Neighbor complementarity ρ <output id="rhoOut">0.55</output></label>
+          <input id="rho" type="range" min="-0.3" max="0.85" step="0.05" value="0.55">
+        </div>
+        <div class="ctl">
+          <label for="sigma">Taste noise σ ($100s) <output id="sigmaOut">3.0</output></label>
+          <input id="sigma" type="range" min="1" max="6" step="0.5" value="3">
+        </div>
+        <div class="ctl">
+          <label id="assignLbl">Voucher assignment</label>
+          <div class="seg" role="group" aria-labelledby="assignLbl">
+            <button id="aRandom" aria-pressed="true">Lottery</button>
+            <button id="aCluster" aria-pressed="false">Block-targeted</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label>Sample <output id="seedOut">#1</output></label>
+          <div><button class="btn" id="newSample">Draw new households</button></div>
+        </div>
+      </div>
+      <div class="maphead">
+        <h3 id="mapTitle">Retrofit spending</h3>
+        <div class="seg" role="group" aria-label="Map layer">
+          <button id="lOut" aria-pressed="true">Spending</button>
+          <button id="lRes" aria-pressed="false">OLS residuals</button>
+          <button id="lRip" aria-pressed="false">Voucher ripple</button>
+        </div>
+      </div>
+      <canvas id="map" aria-label="Map of 400 households on a grid, colored by the selected layer"></canvas>
+      <div class="legend"><span id="legMin">–</span><div id="legendBar"></div><span id="legMax">–</span></div>
+      <div class="readout" id="readout">Hover a household to inspect it. Click one to give it a voucher and watch the effect travel through rounds of neighbors' best responses. Amber dots mark voucher holders.</div>
+    </div>
+
+    <div class="results">
+      <div class="panel">
+        <h2>Estimates: OLS vs. spatial ML</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Parameter</th><th>True</th><th>OLS (s.e.)</th><th>SAR-ML (s.e.)</th></tr></thead>
+            <tbody id="estBody"></tbody>
+          </table>
+        </div>
+        <div class="stat" id="fitStats"></div>
+      </div>
+
+      <div class="twin">
+        <div class="panel">
+          <h3>Moran scatter of OLS residuals</h3>
+          <svg id="moranSvg" viewBox="0 0 300 240" role="img" aria-label="Moran scatterplot"></svg>
+          <div class="stat" id="moranStats"></div>
+        </div>
+        <div class="panel">
+          <h3>Profile log-likelihood for ρ</h3>
+          <svg id="profSvg" viewBox="0 0 300 240" role="img" aria-label="Profile log-likelihood curve"></svg>
+          <div class="stat" id="profStats"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Impact decomposition</h2>
+        <p class="small">Average effect of a one-unit change in each household trait, in $100s of retrofit spending. Standard errors from 500 draws of the estimated parameter distribution.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Variable</th><th>Direct</th><th>Indirect</th><th>Total</th><th>True</th></tr></thead>
+            <tbody id="effBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="ptitle">
+    <h2 id="ptitle">Program evaluation: what is a $400 voucher worth?</h2>
+    <div class="policy" id="policy"></div>
+    <p class="note" id="policyNote"></p>
+  </section>
+
+  <footer>
+    <div>Method: concentrated maximum likelihood for the SAR model (Ord 1975; Anselin 1988) with exact log-determinant from closed-form torus eigenvalues; analytic information matrix; Moran's I with 499 random permutations; impact measures from LeSage &amp; Pace (2009); network game micro-foundation after Ballester, Calvó-Armengol &amp; Zenou (2006).</div>
+    <div>Simulated households only. Rahat Sabyrbekov · <a href="https://github.com/rsabyrbekov" target="_blank" rel="noopener">GitHub</a></div>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const N=20,n=N*N,K=5;
+const NAMES=["Intercept","Log household income","Homeowner","Building age (decades)","Voucher"];
+const BETA=[-36,4.0,3.0,0.8,5.0];
+const VOUCHER_USD=400;
+
+// ---------- spatial structure ----------
+const NB=new Int32Array(n*4);
+for(let i=0;i<n;i++){const r=(i/N)|0,c=i%N;
+  NB[4*i]=((r+N-1)%N)*N+c;NB[4*i+1]=((r+1)%N)*N+c;NB[4*i+2]=r*N+(c+N-1)%N;NB[4*i+3]=r*N+(c+1)%N;}
+function Wmul(v){const o=new Float64Array(n);for(let i=0;i<n;i++)o[i]=(v[NB[4*i]]+v[NB[4*i+1]]+v[NB[4*i+2]]+v[NB[4*i+3]])/4;return o;}
+const LAM=new Float64Array(n);{let t=0;for(let i=0;i<N;i++)for(let j=0;j<N;j++)LAM[t++]=(Math.cos(2*Math.PI*i/N)+Math.cos(2*Math.PI*j/N))/2;}
+function solveA(rho,b){const y=Float64Array.from(b);for(let it=0;it<3000;it++){const wy=Wmul(y);let d=0;for(let i=0;i<n;i++){const nv=b[i]+rho*wy[i];const dd=Math.abs(nv-y[i]);if(dd>d)d=dd;y[i]=nv;}if(d<1e-11)break;}return y;}
+
+// ---------- utilities ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function normal(r){let u=0;while(u===0)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r());}
+const dot=(a,b)=>{let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;};
+function inv(M){const m=M.length;const A=M.map((row,i)=>[...row,...Array.from({length:m},(_,j)=>i===j?1:0)]);
+  for(let c=0;c<m;c++){let p=c;for(let r=c+1;r<m;r++)if(Math.abs(A[r][c])>Math.abs(A[p][c]))p=r;[A[c],A[p]]=[A[p],A[c]];
+    const pv=A[c][c];for(let j=0;j<2*m;j++)A[c][j]/=pv;
+    for(let r=0;r<m;r++)if(r!==c){const f=A[r][c];if(f)for(let j=0;j<2*m;j++)A[r][j]-=f*A[c][j];}}
+  return A.map(row=>row.slice(m));}
+function chol(M){const m=M.length,L=M.map(()=>new Array(m).fill(0));
+  for(let i=0;i<m;i++)for(let j=0;j<=i;j++){let s=M[i][j];for(let k=0;k<j;k++)s-=L[i][k]*L[j][k];L[i][j]=i===j?Math.sqrt(Math.max(s,1e-14)):s/L[j][j];}return L;}
+const mv=(M,v)=>M.map(row=>dot(row,v));
+function XtX(c){return c.map(a=>c.map(b=>dot(a,b)));}
+function Xtv(c,v){return c.map(a=>dot(a,v));}
+function Xb(c,b){const o=new Float64Array(n);for(let k=0;k<c.length;k++){const col=c[k],bk=b[k];for(let i=0;i<n;i++)o[i]+=col[i]*bk;}return o;}
+function fmt(x,d=2){if(!isFinite(x))return"–";return(x<0?"−":"")+Math.abs(x).toFixed(d);}
+function usd(x){const s=Math.round(Math.abs(x)).toLocaleString("en-US");return(x<0?"−$":"$")+s;}
+
+// ---------- data generating process ----------
+function simulate(p){
+  const r=mulberry32(p.seed*9973+17);
+  let z=new Float64Array(n);for(let i=0;i<n;i++)z[i]=normal(r);
+  for(let s=0;s<4;s++){const wz=Wmul(z);for(let i=0;i<n;i++)z[i]=0.3*z[i]+0.7*wz[i];}
+  let m=0,v=0;for(let i=0;i<n;i++)m+=z[i];m/=n;for(let i=0;i<n;i++)v+=(z[i]-m)**2;const sd=Math.sqrt(v/n);
+  const one=new Float64Array(n).fill(1),inc=new Float64Array(n),own=new Float64Array(n),age=new Float64Array(n),vou=new Float64Array(n),eps=new Float64Array(n);
+  for(let i=0;i<n;i++)inc[i]=10.9+0.32*(z[i]-m)/sd+0.12*normal(r);
+  for(let i=0;i<n;i++)own[i]=r()<0.6?1:0;
+  for(let i=0;i<n;i++)age[i]=r()*6;
+  for(let i=0;i<n;i++)eps[i]=normal(r);
+  if(p.assign==="random"){const idx=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}for(let t=0;t<n/4;t++)vou[idx[t]]=1;}
+  else{const sr=Math.floor(r()*N),sc=Math.floor(r()*N);
+    for(const[br,bc]of[[0,0],[0,10],[10,0],[10,10]])for(let a=0;a<5;a++)for(let b=0;b<5;b++)vou[((sr+br+a)%N)*N+(sc+bc+b)%N]=1;}
+  const cols=[one,inc,own,age,vou];
+  const a=Xb(cols,BETA);for(let i=0;i<n;i++)a[i]+=p.sigma*eps[i];
+  const y=solveA(p.rho,a);
+  return{cols,y};
+}
+
+// ---------- estimation ----------
+function estimate(cols,y,seed){
+  const XX=XtX(cols),XXi=inv(XX);
+  const bO=mv(XXi,Xtv(cols,y));const fit=Xb(cols,bO);const e=new Float64Array(n);for(let i=0;i<n;i++)e[i]=y[i]-fit[i];
+  const s2O=dot(e,e)/(n-K);const seO=XXi.map((row,i)=>Math.sqrt(row[i]*s2O));
+  let ybar=0;for(let i=0;i<n;i++)ybar+=y[i];ybar/=n;let tss=0;for(let i=0;i<n;i++)tss+=(y[i]-ybar)**2;const r2=1-dot(e,e)/tss;
+  // Moran's I with permutations
+  const We=Wmul(e);const ee=dot(e,e);const I=dot(e,We)/ee;
+  const pr=mulberry32(seed*31+7);const perm=Float64Array.from(e);let ge=0,sum=0,sum2=0;const P=499;
+  for(let t=0;t<P;t++){for(let i=n-1;i>0;i--){const j=Math.floor(pr()*(i+1));const tmp=perm[i];perm[i]=perm[j];perm[j]=tmp;}
+    const Ip=dot(perm,Wmul(perm))/ee;sum+=Ip;sum2+=Ip*Ip;if(Ip>=I)ge++;}
+  const mI=sum/P,sdI=Math.sqrt(sum2/P-mI*mI);const moran={I,z:(I-mI)/sdI,p:(ge+1)/(P+1),e,We};
+  // concentrated likelihood
+  const wy=Wmul(y);const bL=mv(XXi,Xtv(cols,wy));const fL=Xb(cols,bL);const eL=new Float64Array(n);for(let i=0;i<n;i++)eL[i]=wy[i]-fL[i];
+  const A=dot(e,e),B=dot(e,eL),C=dot(eL,eL);
+  const ll=rho=>{let ld=0;for(let i=0;i<n;i++)ld+=Math.log(1-rho*LAM[i]);const s2=(A-2*rho*B+rho*rho*C)/n;return -n/2*(Math.log(2*Math.PI)+1)-n/2*Math.log(s2)+ld;};
+  const grid=[];let best=0,bestv=-Infinity;
+  for(let g=-0.95;g<=0.985;g+=0.005){const v=ll(g);grid.push([g,v]);if(v>bestv){bestv=v;best=g;}}
+  let lo=Math.max(-0.97,best-0.006),hi=Math.min(0.99,best+0.006);const gr=(Math.sqrt(5)-1)/2;
+  for(let t=0;t<60;t++){const x1=hi-gr*(hi-lo),x2=lo+gr*(hi-lo);if(ll(x1)>ll(x2))hi=x2;else lo=x1;}
+  const rho=(lo+hi)/2;const llmax=ll(rho);
+  const b=bO.map((v,k)=>v-rho*bL[k]);const s2=(A-2*rho*B+rho*rho*C)/n;
+  // analytic information matrix (beta, rho, sigma^2)
+  const u=solveA(rho,Xb(cols,b));const GXb=Wmul(u);
+  let trG=0,trG2=0;for(let i=0;i<n;i++){const g=LAM[i]/(1-rho*LAM[i]);trG+=g;trG2+=g*g;}
+  const m=K+2;const Inf=Array.from({length:m},()=>new Array(m).fill(0));
+  for(let a=0;a<K;a++){for(let c=0;c<K;c++)Inf[a][c]=XX[a][c]/s2;Inf[a][K]=Inf[K][a]=dot(cols[a],GXb)/s2;}
+  Inf[K][K]=2*trG2+dot(GXb,GXb)/s2;Inf[K][K+1]=Inf[K+1][K]=trG/s2;Inf[K+1][K+1]=n/(2*s2*s2);
+  const cov=inv(Inf);const seM=cov.map((row,i)=>Math.sqrt(row[i]));
+  // profile CI
+  const crit=1.920729;let ciLo=NaN,ciHi=NaN;
+  for(let i=1;i<grid.length;i++){const[g0,v0]=grid[i-1],[g1,v1]=grid[i];const d0=v0-llmax+crit,d1=v1-llmax+crit;
+    if(d0<0&&d1>=0)ciLo=g0+(g1-g0)*(-d0)/(d1-d0);if(d0>=0&&d1<0)ciHi=g0+(g1-g0)*d0/(d0-d1);}
+  const LR=2*(llmax-ll(0));
+  // impact simulation
+  const sub=cov.slice(0,K+1).map(r=>r.slice(0,K+1));const L=chol(sub);const er=mulberry32(seed*13+5);
+  const draws=[];const theta=[...b,rho];
+  for(let d=0;d<500;d++){const zz=theta.map(()=>normal(er));const th=theta.map((t,i)=>t+L[i].reduce((s,l,j)=>s+l*zz[j],0));
+    const rd=Math.min(0.985,Math.max(-0.95,th[K]));let ad=0;for(let i=0;i<n;i++)ad+=1/(1-rd*LAM[i]);ad/=n;
+    draws.push(th.slice(0,K).map(bk=>[bk*ad,bk/(1-rd)-bk*ad,bk/(1-rd)]));}
+  let adHat=0;for(let i=0;i<n;i++)adHat+=1/(1-rho*LAM[i]);adHat/=n;
+  const eff=[];for(let k=1;k<K;k++){const pt=[b[k]*adHat,b[k]/(1-rho)-b[k]*adHat,b[k]/(1-rho)];
+    const se=[0,1,2].map(q=>{const xs=draws.map(d=>d[k][q]);const mu=xs.reduce((s,x)=>s+x,0)/xs.length;return Math.sqrt(xs.reduce((s,x)=>s+(x-mu)**2,0)/(xs.length-1));});
+    eff.push({k,pt,se});}
+  return{bO,seO,r2,moran,rho,b,s2,seM,grid,llmax,ciLo,ciHi,LR,eff,adHat,ols_e:e};
+}
+
+// ---------- state ----------
+const S={rho:0.55,sigma:3,assign:"random",seed:1,layer:"out",data:null,est:null,ripple:null,hover:-1,anim:0};
+const $=id=>document.getElementById(id);
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function run(){
+  S.data=simulate(S);S.est=estimate(S.data.cols,S.data.y,S.seed);
+  if(S.ripple)makeRipple(S.ripple.i,false);
+  renderAll();
+}
+let pend=false;function schedule(){if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;run();});}
+
+// ---------- colors ----------
+function hex(c){c=c.trim().replace("#","");if(c.length===3)c=c.split("").map(x=>x+x).join("");const v=parseInt(c,16);return[v>>16&255,v>>8&255,v&255];}
+function tok(name){return getComputedStyle(document.documentElement).getPropertyValue(name);}
+function lerp(a,b,t){return a.map((x,i)=>Math.round(x+(b[i]-x)*t));}
+function seqColor(t,P){t=Math.max(0,Math.min(1,t));return t<0.5?lerp(P.r0,P.r1,t*2):lerp(P.r1,P.r2,(t-0.5)*2);}
+function divColor(t,P){t=Math.max(-1,Math.min(1,t));return t<0?lerp(P.mid,P.neg,-t):lerp(P.mid,P.pos,t);}
+function palette(){return{r0:hex(tok("--ramp-0")),r1:hex(tok("--ramp-1")),r2:hex(tok("--ramp-2")),neg:hex(tok("--neg")),pos:hex(tok("--pos")),mid:hex(tok("--surface-2")),amber:tok("--amber").trim(),ink:tok("--ink").trim(),bg:tok("--surface").trim()};}
+const rgb=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+
+// ---------- map ----------
+const cv=$("map");const ctx=cv.getContext("2d");
+function drawMap(){
+  const P=palette();const w=cv.clientWidth;const dpr=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(w*dpr);}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=P.bg;ctx.fillRect(0,0,w,w);
+  const cs=w/N,gap=Math.max(1,cs*0.06);let vals,mode,lo,hi;
+  if(S.layer==="out"){vals=S.data.y;mode="seq";lo=Infinity;hi=-Infinity;for(const v of vals){if(v<lo)lo=v;if(v>hi)hi=v;}}
+  else if(S.layer==="res"){vals=S.est.ols_e;mode="div";hi=0;for(const v of vals)hi=Math.max(hi,Math.abs(v));lo=-hi;}
+  else{vals=S.ripple?S.ripple.frames[S.ripple.shown]:new Float64Array(n);mode="rip";lo=0;hi=S.ripple?S.ripple.max:1;}
+  for(let i=0;i<n;i++){const r=(i/N)|0,c=i%N;let col;
+    if(mode==="seq")col=seqColor((vals[i]-lo)/(hi-lo||1),P);
+    else if(mode==="div")col=divColor(vals[i]/(hi||1),P);
+    else col=seqColor(Math.sqrt(Math.max(0,vals[i])/(hi||1)),P);
+    ctx.fillStyle=rgb(col);ctx.fillRect(c*cs+gap/2,r*cs+gap/2,cs-gap,cs-gap);}
+  const vou=S.data.cols[4];ctx.fillStyle=P.amber;
+  if(S.layer!=="rip")for(let i=0;i<n;i++)if(vou[i]){const r=(i/N)|0,c=i%N;ctx.beginPath();ctx.arc(c*cs+cs/2,r*cs+cs/2,Math.max(1.5,cs*0.12),0,7);ctx.fill();}
+  if(S.layer==="rip"&&S.ripple){const i=S.ripple.i,r=(i/N)|0,c=i%N;ctx.strokeStyle=P.amber;ctx.lineWidth=2;ctx.strokeRect(c*cs+1,r*cs+1,cs-2,cs-2);}
+  if(S.hover>=0){const r=(S.hover/N)|0,c=S.hover%N;ctx.strokeStyle=P.ink;ctx.lineWidth=1.5;ctx.strokeRect(c*cs+0.75,r*cs+0.75,cs-1.5,cs-1.5);}
+  // legend
+  const bar=$("legendBar");
+  if(mode==="div"){bar.style.background=`linear-gradient(90deg,${rgb(P.neg)},${rgb(P.mid)},${rgb(P.pos)})`;$("legMin").textContent=usd(lo*100);$("legMax").textContent="+"+usd(hi*100);}
+  else{bar.style.background=`linear-gradient(90deg,${rgb(P.r0)},${rgb(P.r1)},${rgb(P.r2)})`;
+    if(mode==="seq"){$("legMin").textContent=usd(lo*100);$("legMax").textContent=usd(hi*100);}
+    else{$("legMin").textContent="$0";$("legMax").textContent=S.ripple?usd(hi*100)+" (√ scale)":"click a household";}}
+  $("mapTitle").textContent={out:"Retrofit spending per household",res:"OLS residuals (unexplained spending)",rip:"Voucher ripple through neighbors"}[S.layer];
+}
+function cellAt(ev){const rc=cv.getBoundingClientRect();const cs=rc.width/N;const c=Math.floor((ev.clientX-rc.left)/cs),r=Math.floor((ev.clientY-rc.top)/cs);if(c<0||r<0||c>=N||r>=N)return-1;return r*N+c;}
+function describe(i){
+  const d=S.data,y=d.y;const nb=[0,1,2,3].map(q=>y[NB[4*i+q]]);const nbm=nb.reduce((a,b)=>a+b,0)/4;
+  return `Household <strong>#${i+1}</strong> (row ${((i/N)|0)+1}, col ${i%N+1}) · spends <strong>${usd(y[i]*100)}</strong> on retrofits; neighbors average <strong>${usd(nbm*100)}</strong>.<br>Income ${usd(Math.exp(d.cols[1][i]))} · ${d.cols[2][i]?"owner":"renter"} · building ${Math.round(d.cols[3][i]*10)} yrs old · ${d.cols[4][i]?"<span style='color:var(--amber)'>voucher holder</span>":"no voucher"} · OLS residual ${usd(S.est.ols_e[i]*100)}`;
+}
+cv.addEventListener("mousemove",ev=>{const i=cellAt(ev);if(i!==S.hover){S.hover=i;drawMap();if(i>=0&&S.layer!=="rip")$("readout").innerHTML=describe(i);}});
+cv.addEventListener("mouseleave",()=>{S.hover=-1;drawMap();});
+cv.addEventListener("click",ev=>{const i=cellAt(ev);if(i<0)return;makeRipple(i,true);setLayer("rip");});
+
+function makeRipple(i,animate){
+  const rho=S.est.rho,bv=S.est.b[4];const R=Math.min(60,Math.max(8,Math.ceil(Math.log(0.01)/Math.log(Math.max(0.05,Math.abs(rho))))));
+  const frames=[];let term=new Float64Array(n);term[i]=bv;let acc=Float64Array.from(term);frames.push(Float64Array.from(acc));
+  for(let k=1;k<=R;k++){term=Wmul(term);for(let j=0;j<n;j++){term[j]*=rho;acc[j]+=term[j];}frames.push(Float64Array.from(acc));}
+  const exact=new Float64Array(n);exact[i]=bv;const full=solveA(rho,exact);frames.push(full);
+  let mx=0;for(const v of full)mx=Math.max(mx,v);
+  S.ripple={i,frames,max:mx,shown:animate&&!reduce?0:frames.length-1,full};
+  cancelAnimationFrame(S.anim);
+  if(animate&&!reduce){let last=0;const step=t=>{if(t-last>70){last=t;S.ripple.shown++;drawMap();rippleText();}if(S.ripple.shown<S.ripple.frames.length-1)S.anim=requestAnimationFrame(step);};S.anim=requestAnimationFrame(step);}
+  rippleText();
+}
+function rippleText(){
+  if(!S.ripple)return;const R=S.ripple,f=R.frames[R.shown],i=R.i;let tot=0;for(const v of f)tot+=v;
+  const done=R.shown===R.frames.length-1;
+  $("readout").innerHTML=`Voucher to household <strong>#${i+1}</strong> · ${done?"equilibrium":"best-response round "+R.shown} · own response <strong>${usd(f[i]*100)}</strong> · neighbors' response <strong>${usd((tot-f[i])*100)}</strong> · total <strong>${usd(tot*100)}</strong>`+(done?`<br>The total equals β̂/(1 − ρ̂) = ${usd(S.est.b[4]/(1-S.est.rho)*100)} wherever the voucher lands. Click another household to compare.`:"");
+}
+
+// ---------- tables & charts ----------
+function renderEst(){
+  const E=S.est;let h="";
+  for(let k=0;k<K;k++){h+=`<tr${k===4?' class="hl"':""}><td>${NAMES[k]}</td><td class="true">${fmt(BETA[k])}</td><td>${fmt(E.bO[k])}<span class="se">(${fmt(E.seO[k])})</span></td><td>${fmt(E.b[k])}<span class="se">(${fmt(E.seM[k])})</span></td></tr>`;}
+  h+=`<tr class="hl"><td>Spatial lag ρ</td><td class="true">${fmt(S.rho)}</td><td class="miss">assumed 0</td><td>${fmt(E.rho,3)}<span class="se">(${fmt(E.seM[K],3)})</span></td></tr>`;
+  $("estBody").innerHTML=h;
+  const pLR=E.LR>10.83?"p < 0.001":E.LR>6.63?"p < 0.01":E.LR>3.84?"p < 0.05":"not significant";
+  $("fitStats").innerHTML=`<div>OLS R² <span>${fmt(E.r2,3)}</span></div><div>SAR σ̂ <span>${usd(Math.sqrt(E.s2)*100)}</span></div><div>LR test ρ = 0: <span>χ²(1) = ${fmt(E.LR,1)}</span> <span class="pill ${E.LR>3.84?"sig":""}">${pLR}</span></div>`;
+}
+function renderMoran(){
+  const M=S.est.moran;const e=M.e,We=M.We;let m=0,v=0;for(const x of e)m+=x;m/=n;for(const x of e)v+=(x-m)**2;const sd=Math.sqrt(v/n);
+  const W=300,H=240,pad=28,lim=3.2;const sx=x=>pad+(x+lim)/(2*lim)*(W-pad-8),sy=y=>H-pad-(y+lim)/(2*lim)*(H-pad-8);
+  let s=`<line class="axis" x1="${sx(-lim)}" y1="${sy(0)}" x2="${sx(lim)}" y2="${sy(0)}"/><line class="axis" x1="${sx(0)}" y1="${sy(-lim)}" x2="${sx(0)}" y2="${sy(lim)}"/>`;
+  for(let i=0;i<n;i++){const x=(e[i]-m)/sd,y=(We[i]-m)/sd;if(Math.abs(x)>lim||Math.abs(y)>lim)continue;s+=`<circle class="pt" cx="${sx(x).toFixed(1)}" cy="${sy(y).toFixed(1)}" r="2"/>`;}
+  const yl=M.I*lim;s+=`<line class="fit" x1="${sx(-lim)}" y1="${sy(-yl)}" x2="${sx(lim)}" y2="${sy(yl)}"/>`;
+  s+=`<text x="${W-8}" y="${H-10}" text-anchor="end">own residual z →</text><text x="${pad}" y="12">↑ neighbors' avg Wz</text>`;
+  s+=`<text x="${sx(-lim)}" y="${H-10}">−3</text>`;
+  $("moranSvg").innerHTML=s;
+  const sig=M.p<0.05;
+  $("moranStats").innerHTML=`<div>Moran's I <span>${fmt(M.I,3)}</span></div><div>z <span>${fmt(M.z,1)}</span></div><span class="pill ${sig?"sig":""}">perm. p ${M.p<0.0025?"≤ 0.002":"= "+fmt(M.p,3)}</span>`;
+}
+function renderProfile(){
+  const E=S.est;const lo=Math.max(-0.95,E.rho-0.35),hi=Math.min(0.985,E.rho+0.35);
+  const pts=E.grid.filter(([g])=>g>=lo&&g<=hi).map(([g,v])=>[g,v-E.llmax]);
+  const ymin=Math.max(-40,Math.min(...pts.map(p=>p[1])));
+  const W=300,H=240,pl=34,pb=26,pt=10,pr=8;const sx=x=>pl+(x-lo)/(hi-lo)*(W-pl-pr),sy=y=>pt+(0-y)/(0-ymin)*(H-pt-pb);
+  let d="";pts.forEach(([g,v],i)=>{const yy=Math.min(H-pb,sy(Math.max(v,ymin)));d+=(i?"L":"M")+sx(g).toFixed(1)+" "+yy.toFixed(1);});
+  let s=`<line class="axis" x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}"/><line class="axis" x1="${pl}" y1="${pt}" x2="${pl}" y2="${H-pb}"/>`;
+  const t0=Math.ceil(lo*10)/10;for(let t=t0;t<=hi+1e-9;t+=0.1){const x=sx(t);s+=`<line class="axis" x1="${x}" y1="${H-pb}" x2="${x}" y2="${H-pb+4}"/>`;if(Math.round(t*10)%2===0)s+=`<text x="${x}" y="${H-pb+15}" text-anchor="middle">${fmt(t,1)}</text>`;}
+  const ystep=ymin<-20?10:ymin<-8?4:2;for(let yv=0;yv>=ymin;yv-=ystep)s+=`<text x="${pl-5}" y="${sy(yv)+3}" text-anchor="end">${yv===0?"0":"−"+Math.abs(yv)}</text>`;
+  if(-1.92>ymin)s+=`<line class="ci" x1="${pl}" y1="${sy(-1.92)}" x2="${W-pr}" y2="${sy(-1.92)}"/><text x="${W-pr}" y="${sy(-1.92)-4}" text-anchor="end">95% CI cut</text>`;
+  s+=`<path class="curve" d="${d}"/>`;
+  if(S.rho>=lo&&S.rho<=hi)s+=`<line class="truth" x1="${sx(S.rho)}" y1="${pt}" x2="${sx(S.rho)}" y2="${H-pb}"/>`;
+  s+=`<circle cx="${sx(E.rho)}" cy="${sy(0)}" r="4" style="fill:var(--accent)"/>`;
+  $("profSvg").innerHTML=s;
+  $("profStats").innerHTML=`<div>ρ̂ <span>${fmt(E.rho,3)}</span></div><div>95% profile CI <span>[${fmt(E.ciLo,2)}, ${fmt(E.ciHi,2)}]</span></div><div style="color:var(--amber)">true <span>${fmt(S.rho,2)}</span></div>`;
+}
+function renderEff(){
+  const E=S.est;let h="";
+  for(const f of E.eff){const tt=BETA[f.k]/(1-S.rho);
+    h+=`<tr${f.k===4?' class="hl"':""}><td>${NAMES[f.k]}</td>${f.pt.map((v,q)=>`<td>${fmt(v)}<span class="se">(${fmt(f.se[q])})</span></td>`).join("")}<td class="true">${fmt(tt)}</td></tr>`;}
+  $("effBody").innerHTML=h;
+}
+function renderPolicy(){
+  const E=S.est;const v=E.eff.find(f=>f.k===4);const ols=E.bO[4]*100;const dir=v.pt[0]*100,ind=v.pt[1]*100,tot=v.pt[2]*100;
+  const trueTot=BETA[4]/(1-S.rho)*100;
+  const figs=[["OLS: own household only",usd(ols),`${fmt(ols/VOUCHER_USD,2)} per voucher dollar`,""],
+    ["SAR direct (incl. feedback)",usd(dir),`± ${usd(v.se[0]*100)}`,""],
+    ["Spillover to neighbors",usd(ind),`± ${usd(v.se[1]*100)}`,""],
+    ["Total induced spending",usd(tot),`${fmt(tot/VOUCHER_USD,2)} per voucher dollar`,"em"]];
+  $("policy").innerHTML=figs.map(([l,val,sub,c])=>`<div class="fig ${c}"><div class="l">${l}</div><div class="v">${val}</div><div class="l mono">${sub}</div></div>`).join("");
+  const ratio=tot/ols;const M=E.moran;
+  let note=`OLS residuals show ${M.p<0.05?"clear":"no significant"} spatial clustering (Moran's I = ${fmt(M.I,2)}). `;
+  if(S.assign==="random")note+=`Because vouchers were assigned by lottery, OLS recovers roughly the direct effect (${usd(ols)}), but it is silent on the ${usd(ind)} that neighbors spend in response. Counting both, each $400 voucher induces about ${usd(tot)} of retrofit spending (true value ${usd(trueTot)}), ${fmt(ratio,1)}× what the naive evaluation reports. `;
+  else note+=`With vouchers concentrated in blocks, voucher holders' neighbors also hold vouchers, so the OLS coefficient (${usd(ols)}) absorbs part of the spillover and no longer measures any well-defined effect. The SAR model separates own and neighbor responses: total ${usd(tot)} per voucher (true ${usd(trueTot)}). `;
+  note+=`In a linear SAR on a regular lattice, the aggregate multiplier 1/(1 − ρ) is the same wherever a voucher lands, so targeting changes who benefits, not the total. Threshold adoption or capacity limits would change that; that is the natural next extension.`;
+  $("policyNote").textContent=note;
+}
+function renderAll(){drawMap();renderEst();renderMoran();renderProfile();renderEff();renderPolicy();}
+
+// ---------- controls ----------
+function setLayer(l){S.layer=l;for(const[id,v]of[["lOut","out"],["lRes","res"],["lRip","rip"]])$(id).setAttribute("aria-pressed",String(l===v));
+  if(l==="rip"&&!S.ripple)$("readout").textContent="Click any household on the map to give it a voucher and trace the response through its neighbors.";
+  else if(l==="rip")rippleText();drawMap();}
+$("lOut").onclick=()=>setLayer("out");$("lRes").onclick=()=>setLayer("res");$("lRip").onclick=()=>setLayer("rip");
+$("rho").addEventListener("input",e=>{S.rho=+e.target.value;$("rhoOut").textContent=S.rho.toFixed(2);schedule();});
+$("sigma").addEventListener("input",e=>{S.sigma=+e.target.value;$("sigmaOut").textContent=S.sigma.toFixed(1);schedule();});
+function setAssign(a){S.assign=a;$("aRandom").setAttribute("aria-pressed",String(a==="random"));$("aCluster").setAttribute("aria-pressed",String(a!=="random"));schedule();}
+$("aRandom").onclick=()=>setAssign("random");$("aCluster").onclick=()=>setAssign("cluster");
+$("newSample").onclick=()=>{S.seed++;$("seedOut").textContent="#"+S.seed;S.ripple=null;if(S.layer==="rip")setLayer("out");schedule();};
+window.addEventListener("resize",()=>drawMap());
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>drawMap());
+new MutationObserver(()=>drawMap()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+run();
+})();
+</script>
+
+</body>
+</html>
